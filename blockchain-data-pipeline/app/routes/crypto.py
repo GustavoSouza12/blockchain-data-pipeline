@@ -69,4 +69,38 @@ def get_latest():
         }
     
     return results
+
+@router.get('/historical')
+def get_historical(asset: str, limit: int = 50):
+    conn = sqlite3.connect("database/database.db")
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT timestamp, price
+        FROM crypto_prices
+        WHERE asset = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+        """,
+        (asset.upper(), limit)
+    )
     
+    rows = cursor.fetchall()
+
+    results = []
+
+    for row in rows:
+
+        ts = row[0]
+        price = row[1]
+
+        result = {
+            "timestamp": ts,
+            "price": price
+        }
+
+        results.append(result)
+
+    conn.close()
+    return results

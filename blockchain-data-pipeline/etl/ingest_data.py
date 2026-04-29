@@ -1,17 +1,7 @@
 import requests
 import sqlite3
 from datetime import datetime
-
-
-# API (preço BTC e ETH)
-url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum"
-
-response = requests.get(url)
-data = response.json()
-
-# Tratamento
-timestamp = datetime.utcnow().isoformat()
-
+import time
 
 # Banco
 conn = sqlite3.connect("database/database.db")  
@@ -26,37 +16,51 @@ CREATE TABLE IF NOT EXISTS crypto_prices (
 )
 """)
 
-records = []
+while True:
+    try:
+        url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum"
 
+        response = requests.get(url)
 
-asset_map = {
-    "bitcoin": "BTC",
-    "ethereum": "ETH"
-}
+        if response.status_code != 200:
+            print("Erro API:", response.status_code)
+            time.sleep(30)
+            continue
 
-for coin in data:
-    asset = asset_map.get(coin["id"], coin["id"].upper())
-    price = coin["current_price"]
-    market_cap = coin["market_cap"]
+        data = response.json()
 
-    record = {
-        "timestamp": timestamp,
-        "asset": asset,
-        "price": price,
-        "market_cap": market_cap
-    }
-    print(timestamp, asset, price, market_cap)
-    records.append(record)
+        timestamp = datetime.utcnow().isoformat()
 
-    cursor.execute(
-        """
-        INSERT INTO crypto_prices (timestamp, asset, price, market_cap)
-        VALUES (?,?,?,?)
-        """,
-        (timestamp, asset, price, market_cap)
-    )
-conn.commit()
+        conn = sqlite3.connect("database/database.db")  
+        cursor = conn.cursor()
 
-conn.close()
+        asset_map = {
+            "bitcoin": "BTC",
+            "ethereum": "ETH"
+        }
 
-print("OK: dados inseridos")
+        for coin in data:
+            asset = asset_map.get(coin["id"], coin["id"].upper())
+            price = coin["current_price"]
+            market_cap = coin["market_cap"]
+
+            cursor.execute(
+                """
+                INSERT INTO crypto_prices (timestamp, asset, price, market_cap)
+                VALUES (?,?,?,?)
+                """,
+                (timestamp, asset, price, market_cap)
+            )
+
+            print(timestamp, asset, price, market_cap)
+
+        conn.commit()
+        conn.close()
+
+        print(f"{timestamp} - OK")
+
+        time.sleep(10)
+
+    except Exception as e:
+        print("Erro geral:", e)
+        time.sleep(30)
