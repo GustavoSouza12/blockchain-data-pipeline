@@ -34,10 +34,7 @@ conn = psycopg2.connect(
 )
 
 cursor = conn.cursor()
-
  
- 
-# Criar tabela
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS crypto_prices (
