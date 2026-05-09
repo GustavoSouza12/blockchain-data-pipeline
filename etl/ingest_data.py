@@ -14,9 +14,11 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 # Carregar .env
 load_dotenv(dotenv_path=env_path)
 
+
 # DEBUG
 print("ENV PATH:", env_path)
 print("HOST:", os.getenv("DB_HOST"))
+print("PORT:", os.getenv("DB_PORT"))
 print("NAME:", os.getenv("DB_NAME"))
 print("USER:", os.getenv("DB_USER"))
 print("PASSWORD:", os.getenv("DB_PASSWORD"))
@@ -25,6 +27,7 @@ print("PASSWORD:", os.getenv("DB_PASSWORD"))
 # Conexao PostgreSQL
 conn = psycopg2.connect(
     host=os.getenv("DB_HOST"),
+    port=os.getenv("DB_PORT"),
     database=os.getenv("DB_NAME"),
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD")
@@ -32,15 +35,18 @@ conn = psycopg2.connect(
 
 cursor = conn.cursor()
 
+
 # Criar tabela
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS crypto_prices (
-    timestamp TEXT,
-    asset TEXT,
-    price REAL,
-    market_cap FLOAT
+cursor.execute(
+    """
+    CREATE TABLE IF NOT EXISTS crypto_prices (
+        timestamp TEXT,
+        asset TEXT,
+        price REAL,
+        market_cap FLOAT
+    )
+    """
 )
-""")
 
 conn.commit()
 
@@ -56,13 +62,19 @@ while True:
     try:
 
         # API
-        url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum"
+        url = (
+            "https://api.coingecko.com/api/v3/coins/markets"
+            "?vs_currency=usd&ids=bitcoin,ethereum"
+        )
 
         response = requests.get(url)
 
         if response.status_code != 200:
+
             print("Erro API:", response.status_code)
+
             time.sleep(30)
+
             continue
 
         data = response.json()
@@ -79,6 +91,7 @@ while True:
             )
 
             price = coin["current_price"]
+
             market_cap = coin["market_cap"]
 
             cursor.execute(
