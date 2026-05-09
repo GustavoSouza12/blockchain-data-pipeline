@@ -35,7 +35,8 @@ conn = psycopg2.connect(
 
 cursor = conn.cursor()
 
-
+ 
+ 
 # Criar tabela
 cursor.execute(
     """
